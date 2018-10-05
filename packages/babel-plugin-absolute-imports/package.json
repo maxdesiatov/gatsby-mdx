@@ -1,0 +1,19 @@
+{
+  "name": "babel-plugin-absolute-imports",
+  "version": "0.0.1",
+  "description": "Babel plugin to rewrite imports with relative paths to absolute paths",
+  "main": "index.js",
+  "author": "Max Desiatov <max@desiatov.com> (@chrisbiscardi)",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.0.0",
+    "@babel/preset-react": "^7.0.0",
+    "jest": "^23.4.2"
+  },
+  "jest": {
+    "testEnvironment": "node"
+  }
+}

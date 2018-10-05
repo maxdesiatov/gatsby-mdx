@@ -112,6 +112,7 @@ async function genMDX(node, options, babelConfig = {}) {
    *   React.createElement(MDXRenderer, null, results.body)
    * ); */
 
+  debug("mdx processed succesfully");
   return results;
 }
 

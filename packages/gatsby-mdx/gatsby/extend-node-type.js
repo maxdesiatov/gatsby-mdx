@@ -14,13 +14,9 @@ const remove = require("unist-util-remove");
 const toString = require("mdast-util-to-string");
 const generateTOC = require("mdast-util-toc");
 const stripMarkdown = require("strip-markdown");
-
+const { dirname } = require("path");
 const prune = require("underscore.string/prune");
-const crypto = require("crypto");
-const fs = require("fs");
-const path = require("path");
-const { MDX_SCOPES_LOCATION } = require("../constants");
-
+const { getScopeFile } = require("./get-scope-file");
 const debug = require("debug")("gatsby-mdx:extend-node-type");
 const renderHTML = require("../utils/render-html");
 const getTableOfContents = require("../utils/get-table-of-content");
@@ -72,6 +68,7 @@ module.exports = (
       pathPrefix,
       options
     });
+
   return new Promise((resolve /*, reject*/) => {
     async function getText(mdxNode) {
       const { mdast } = await processMDX({ node: mdxNode });
@@ -136,35 +133,19 @@ module.exports = (
             },
             scope: {
               type: GraphQLString,
-              async resolve(mdxNode) {
-                const createFilePath = (directory, filename, ext) =>
-                  path.join(
-                    directory,
-                    MDX_SCOPES_LOCATION,
-                    `${filename}${ext}`
-                  );
-
-                const createHash = str =>
-                  crypto
-                    .createHash(`md5`)
-                    .update(str)
-                    .digest(`hex`);
-
+              async resolve(node) {
+                debug("scope resolver running");
                 const { scopeImports, scopeIdentifiers } = await processMDX({
-                  node: mdxNode
+                  node
                 });
-                const scopeFileContent = `${scopeImports.join("\n")}
+                debug("scope resolver processMDX finished");
 
-export default { ${scopeIdentifiers.join(", ")} }`;
-
-                const filePath = createFilePath(
+                return await getScopeFile(
                   options.root,
-                  createHash(scopeFileContent),
-                  ".js"
+                  dirname(node.fileAbsolutePath),
+                  scopeImports,
+                  scopeIdentifiers
                 );
-
-                fs.writeFileSync(filePath, scopeFileContent);
-                return filePath;
               }
             }
           }
@@ -220,13 +201,23 @@ export default { ${scopeIdentifiers.join(", ")} }`;
       },
       html: {
         type: GraphQLString,
-        async resolve(mdxNode) {
-          if (mdxNode.html) {
-            return Promise.resolve(mdxNode.html);
+        async resolve(node) {
+          if (node.html) {
+            return Promise.resolve(node.html);
           }
 
-          const { body } = await processMDX({ node: mdxNode });
-          return renderHTML(body);
+          const { body, scopeImports, scopeIdentifiers } = await processMDX({
+            node
+          });
+          const scopeFile = await getScopeFile(
+            options.root,
+            dirname(node.fileAbsolutePath),
+            scopeImports,
+            scopeIdentifiers
+          );
+          debug(`scopeFile is ${scopeFile}`);
+          const scope = require(scopeFile);
+          return renderHTML(body, scope.default);
         }
       },
       tableOfContents: {
