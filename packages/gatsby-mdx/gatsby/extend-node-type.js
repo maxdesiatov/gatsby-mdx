@@ -25,7 +25,7 @@ const debug = require("debug")("gatsby-mdx:extend-node-type");
 const renderHTML = require("../utils/render-html");
 const getTableOfContents = require("../utils/get-table-of-content");
 const defaultOptions = require("../utils/default-options");
-const genMDX = require("../utils/gen-mdx");
+const { genMDXWithRemarkPlugins } = require("../utils/gen-mdx");
 
 module.exports = (
   { type /*store*/, pathPrefix, getNode, getNodes, cache, reporter },
@@ -63,7 +63,15 @@ module.exports = (
   }
 
   const processMDX = ({ node }) =>
-    genMDX({ node, getNode, getNodes, reporter, cache, pathPrefix, options });
+    genMDXWithRemarkPlugins({
+      node,
+      getNode,
+      getNodes,
+      reporter,
+      cache,
+      pathPrefix,
+      options
+    });
   return new Promise((resolve /*, reject*/) => {
     async function getText(mdxNode) {
       const { mdast } = await processMDX({ node: mdxNode });

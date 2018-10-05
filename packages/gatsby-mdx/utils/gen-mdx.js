@@ -40,24 +40,7 @@ const getSourcePluginsAsRemarkPlugins = require("./get-source-plugins-as-remark-
  * }
  *  */
 
-module.exports = async function genMDX({
-  node,
-  options,
-  getNode,
-  getNodes,
-  reporter,
-  cache,
-  pathPrefix
-}) {
-  let results = {
-    mdast: undefined,
-    hast: undefined,
-    html: undefined,
-    scopeImports: [],
-    scopeIdentifiers: [],
-    body: undefined
-  };
-
+async function genMDX(node, options, babelConfig = {}) {
   // TODO: a remark and a hast plugin that pull out the ast and store it in results
   /* const cacheMdast = () => ast => {
    *   results.mdast = ast;
@@ -73,6 +56,15 @@ module.exports = async function genMDX({
   debug("processing classic frontmatter");
   const { content } = grayMatter(node.rawBody);
 
+  let results = {
+    mdast: undefined,
+    hast: undefined,
+    html: undefined,
+    scopeImports: [],
+    scopeIdentifiers: [],
+    body: undefined
+  };
+
   // get mdast by itself
   // in the future it'd be nice to not do this twice
   debug("generating AST");
@@ -87,27 +79,13 @@ module.exports = async function genMDX({
    *   reporter,
    *   cache
    * }); */
-
-  const gatsbyRemarkPluginsAsMDPlugins = await getSourcePluginsAsRemarkPlugins({
-    gatsbyRemarkPlugins: options.gatsbyRemarkPlugins,
-    mdxNode: node,
-    //          files,
-    getNode,
-    getNodes,
-    reporter,
-    cache,
-    pathPrefix
-  });
-
   debug("running mdx");
-  let code = await mdx(content, {
-    ...options,
-    mdPlugins: options.mdPlugins.concat(gatsbyRemarkPluginsAsMDPlugins)
-  });
+  const code = await mdx(content, options);
 
   debug("compiling scope");
   const instance = new BabelPluginPluckImports();
   const result = babel.transform(code, {
+    ...babelConfig,
     plugins: [instance.plugin, objRestSpread],
     presets: [require("@babel/preset-react")]
   });
@@ -135,4 +113,35 @@ module.exports = async function genMDX({
    * ); */
 
   return results;
+}
+
+async function genMDXWithRemarkPlugins({
+  node,
+  options,
+  getNode,
+  getNodes,
+  reporter,
+  cache,
+  pathPrefix
+}) {
+  const gatsbyRemarkPluginsAsMDPlugins = await getSourcePluginsAsRemarkPlugins({
+    gatsbyRemarkPlugins: options.gatsbyRemarkPlugins,
+    mdxNode: node,
+    //          files,
+    getNode,
+    getNodes,
+    reporter,
+    cache,
+    pathPrefix
+  });
+
+  return genMDX(node, {
+    ...options,
+    mdPlugins: options.mdPlugins.concat(gatsbyRemarkPluginsAsMDPlugins)
+  });
+}
+
+module.exports = {
+  genMDXWithRemarkPlugins,
+  genMDX
 };
