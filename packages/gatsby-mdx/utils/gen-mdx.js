@@ -40,7 +40,7 @@ const getSourcePluginsAsRemarkPlugins = require("./get-source-plugins-as-remark-
  * }
  *  */
 
-async function genMDX(node, options, babelConfig = {}) {
+async function genMDX(node, options) {
   // TODO: a remark and a hast plugin that pull out the ast and store it in results
   /* const cacheMdast = () => ast => {
    *   results.mdast = ast;
@@ -85,7 +85,7 @@ async function genMDX(node, options, babelConfig = {}) {
   debug("compiling scope");
   const instance = new BabelPluginPluckImports();
   const result = babel.transform(code, {
-    ...babelConfig,
+    configFile: false,
     plugins: [instance.plugin, objRestSpread],
     presets: [require("@babel/preset-react")]
   });

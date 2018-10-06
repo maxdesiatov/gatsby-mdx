@@ -34,9 +34,7 @@ test("renderHTML works end-to-end", async () => {
 * World!
   `;
 
-  const { body } = await genMDX({ rawBody }, defaultOptions(), {
-    configFile: false
-  });
+  const { body } = await genMDX({ rawBody }, defaultOptions());
 
   expect(renderHTML(body)).toBe(
     "<div><h1>Hello</h1><ul><li><p>World!</p></li></ul></div>"
